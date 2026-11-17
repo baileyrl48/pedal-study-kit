@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pedal Schematic Study Kit</title>
+<meta name="description" content="Flashcards, quizzes and a tap-to-find schematic for learning to read guitar pedal schematics.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pedal Study">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#edf1ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12231c" media="(prefers-color-scheme: dark)">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Chakra+Petch:wght@600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Plan: pocket study tool styled like a pedal PCB. Light = drafting paper with a fine grid,
+   dark = green soldermask with white silkscreen. Copper accent marks labels and the active choice.
+   Layout: one column, phone first, tabs pinned to the bottom like an app. */
+:root{
+  --bg:#edf1ee;
+  --grid:rgba(30,70,55,.07);
+  --card:#fbfcfb;
+  --ink:#14261f;
+  --muted:#5a6b63;
+  --line:#c8d3ce;
+  --accent:#a95c1f;
+  --accent-soft:rgba(169,92,31,.12);
+  --good:#2c7a4b;
+  --good-soft:rgba(44,122,75,.13);
+  --bad:#b13838;
+  --bad-soft:rgba(177,56,56,.12);
+  --block-a:rgba(44,122,75,.10);
+  --block-b:rgba(169,92,31,.10);
+  --font-display:"Chakra Petch","Arial Narrow",system-ui,sans-serif;
+  --font-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c1914; --grid:rgba(160,220,190,.05); --card:#12231c; --ink:#e8efea; --muted:#93a79d;
+    --line:#263c32; --accent:#df9455; --accent-soft:rgba(223,148,85,.14); --good:#5cc085;
+    --good-soft:rgba(92,192,133,.14); --bad:#ee7a7a; --bad-soft:rgba(238,122,122,.13);
+    --block-a:rgba(92,192,133,.10); --block-b:rgba(223,148,85,.11); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c1914; --grid:rgba(160,220,190,.05); --card:#12231c; --ink:#e8efea; --muted:#93a79d;
+  --line:#263c32; --accent:#df9455; --accent-soft:rgba(223,148,85,.14); --good:#5cc085;
+  --good-soft:rgba(92,192,133,.14); --bad:#ee7a7a; --bad-soft:rgba(238,122,122,.13);
+  --block-a:rgba(92,192,133,.10); --block-b:rgba(223,148,85,.11); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:20px 20px;
+  color:var(--ink); font-family:var(--font-body); font-size:17px; line-height:1.45;
+  -webkit-tap-highlight-color:transparent;
+}
+.wrap{max-width:680px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(104px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left))}
+header.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:4px 0 14px}
+header.top h1{font-family:var(--font-display);font-weight:700;font-size:24px;letter-spacing:.02em;margin:0;line-height:1.1;text-wrap:balance}
+header.top h1 span{color:var(--accent)}
+header.top .sub{font-family:var(--font-mono);font-size:12px;color:var(--muted);white-space:nowrap}
+h2,h3{font-family:var(--font-display);font-weight:700;text-wrap:balance}
+.view{display:none}
+.view.on{display:block}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;font:600 14px var(--font-body);border:1.5px solid var(--line);background:var(--card);color:var(--ink);
+  padding:7px 13px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.chip:focus-visible,.btn:focus-visible,.opt:focus-visible,.card:focus-visible,nav button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.progress{display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:13px;color:var(--muted);margin:2px 0 12px}
+.bar{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--good);width:0;transition:width .3s}
+/* flashcard */
+.card{position:relative;height:430px;perspective:1200px;cursor:pointer;border-radius:16px}
+.inner{position:absolute;inset:0;transition:transform .45s cubic-bezier(.3,.7,.3,1);transform-style:preserve-3d}
+.card.flipped .inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;background:var(--card);border:1.5px solid var(--line);border-radius:16px;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;padding:18px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.face.back{transform:rotateY(180deg)}
+.face .corner{position:absolute;top:12px;right:14px;font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.q{font-family:var(--font-display);font-weight:600;font-size:19px;line-height:1.25;padding-right:48px}
+.fig{flex:1;display:flex;align-items:center;justify-content:center;min-height:120px;color:var(--ink)}
+.fig svg{width:100%;max-width:320px;max-height:210px}
+.back .fig{flex:none;min-height:0}
+.back .fig svg{max-height:150px}
+.big{font-family:var(--font-mono);font-weight:600;font-size:56px;letter-spacing:.02em;color:var(--ink)}
+.tap{text-align:center;font-size:14px;color:var(--muted)}
+.ans{font-size:24px;margin:0;line-height:1.2}
+.refchip{display:inline-block;font-family:var(--font-mono);font-size:13px;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:6px;margin-right:6px}
+.detail{margin:0;color:var(--ink)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.btn{font:700 16px var(--font-body);padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.btn.again{border-color:var(--bad);color:var(--bad)}
+.btn.got{border-color:var(--good);background:var(--good);color:var(--card)}
+.btn.primary{border-color:var(--accent);background:var(--accent);color:var(--card)}
+.btn.ghost{background:transparent}
+.btn[hidden]{display:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.row .btn{flex:1}
+.done{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:22px;text-align:center}
+.done h2{margin:0 0 6px}
+/* quiz */
+.qcard{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.qhead{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:13px;color:var(--muted)}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;font:600 16px var(--font-body);padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt:disabled{cursor:default}
+.explain{border-left:3px solid var(--accent);padding:4px 0 4px 12px;margin:0}
+.score{font-family:var(--font-display);font-size:44px;font-weight:700;color:var(--accent);margin:0}
+.missed{text-align:left;margin:10px 0 0;padding-left:20px}
+/* find it */
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.seg button{font:700 15px var(--font-body);border:0;background:transparent;color:var(--ink);padding:9px 16px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--card)}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.toggle{display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer}
+.toggle input{width:20px;height:20px;accent-color:var(--accent)}
+.prompt{background:var(--card);border:1.5px solid var(--accent);border-radius:12px;padding:12px 14px;font-family:var(--font-display);font-weight:600;font-size:18px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.prompt small{font-family:var(--font-mono);font-weight:500;font-size:12px;color:var(--muted);white-space:nowrap}
+.schwrap{overflow-x:auto;margin:10px -16px 0;padding:0 16px;-webkit-overflow-scrolling:touch}
+.schwrap svg{display:block;min-width:700px;width:100%;background:var(--card);border:1.5px solid var(--line);border-radius:14px}
+.hint{font-size:13px;color:var(--muted);margin:6px 0 0}
+.info{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:12px}
+.info h3{margin:0 0 4px;font-size:19px}
+.info p{margin:6px 0 0}
+.info.good{border-color:var(--good)}
+.info.bad{border-color:var(--bad)}
+.tag{display:inline-block;font:600 12px var(--font-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+/* which end guide */
+.gsec{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.gsec h2{margin:0 0 4px;font-size:21px}
+.gsec > p{margin:4px 0 10px;color:var(--muted)}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:8px 0 10px}
+figure{margin:0;border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--bg)}
+figure svg{width:100%;max-width:220px;max-height:150px;color:var(--ink)}
+figcaption{font-size:14px;text-align:center;font-weight:700}
+.gsec ul{margin:0;padding-left:20px}
+.gsec li{margin:4px 0}
+.gsec b{color:var(--accent)}
+/* svg drawing */
+.sym line,.sym path,.sym rect,.sym circle,.sym polyline{stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.sym .fill{fill:currentColor}
+.sym .fillA{fill:var(--accent);stroke:var(--accent)}
+.sym .dash{stroke-dasharray:3 3}
+.sym .thick{stroke-width:3.5}
+.sym .body{stroke-width:1.4;opacity:.55}
+.sym text{stroke:none;font-family:var(--font-mono)}
+.sym .lbl{fill:var(--accent);font-size:6.6px;font-weight:600}
+.sym .pin{fill:var(--accent);font-size:9px;font-weight:600}
+.sym .pinN{fill:currentColor;font-size:7px;font-weight:600}
+.sym .pm{fill:currentColor;font-size:11px;font-weight:600}
+.sym .pmS{fill:currentColor;font-size:7.5px;font-weight:600}
+.sym .inv{fill:var(--card);font-size:9px;font-weight:600}
+.sch .w,.sch line,.sch path,.sch rect,.sch circle{stroke-width:1.7}
+.sch .ref{fill:currentColor;font-size:10.5px;font-weight:600}
+.sch .val{fill:var(--muted);font-size:9.5px;font-weight:500}
+.sch .dot{fill:currentColor;stroke:none}
+.sch .blk{stroke:none}
+.sch .blkA{fill:var(--block-a)}
+.sch .blkB{fill:var(--block-b)}
+.sch .blkname{fill:var(--accent);font-size:9.5px;font-weight:600;letter-spacing:.06em}
+.sch .blocks{display:none}
+.sch.showblocks .blocks{display:inline}
+.sch .hit{fill:transparent;stroke:none;cursor:pointer}
+.sch .sel{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-dasharray:4 3}
+.sch .sel.good{stroke:var(--good);stroke-dasharray:none}
+.sch .sel.bad{stroke:var(--bad)}
+/* bottom nav */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1.5px solid var(--line);display:flex;justify-content:center;z-index:5;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs .in{display:grid;grid-template-columns:repeat(4,1fr);width:100%;max-width:680px}
+nav.tabs button{font:700 13px var(--font-body);background:none;border:0;color:var(--muted);padding:9px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+nav.tabs button svg{width:26px;height:20px}
+nav.tabs button[aria-current="page"]{color:var(--accent)}
+@media (prefers-reduced-motion:reduce){.inner,.bar i{transition:none}}
+@media (max-width:400px){.big{font-size:46px}.card{height:450px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Pedal Schematic <span>Study Kit</span></h1>
+    <div class="sub" id="knownTotal"></div>
+  </header>
+
+  <section class="view" id="v-cards" aria-label="Flashcards">
+    <div class="chips" id="deckChips" role="group" aria-label="Choose a deck"></div>
+    <div class="progress"><span id="progTxt"></span><div class="bar"><i id="progBar"></i></div></div>
+    <div id="cardZone"></div>
+  </section>
+
+  <section class="view" id="v-quiz" aria-label="Quiz">
+    <div class="chips" id="quizChips" role="group" aria-label="Choose a quiz deck"></div>
+    <div id="quizZone"></div>
+  </section>
+
+  <section class="view" id="v-find" aria-label="Find it on a schematic">
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Mode">
+        <button id="mHunt" aria-pressed="true">Hunt</button>
+        <button id="mExplore" aria-pressed="false">Explore</button>
+      </div>
+      <label class="toggle" for="showBlocks"><input type="checkbox" id="showBlocks"> Show sections</label>
+    </div>
+    <div class="prompt" id="huntPrompt"></div>
+    <div class="schwrap" id="schWrap"></div>
+    <p class="hint">An example overdrive circuit. Scroll sideways on a phone. The bypass footswitch is left out to keep it simple.</p>
+    <div class="info" id="findInfo"></div>
+  </section>
+
+  <section class="view" id="v-pins" aria-label="Which end is which"></section>
+</div>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="in">
+    <button data-tab="cards"><svg viewBox="0 0 26 20" class="sym"><rect x="5" y="2" width="16" height="16" rx="2"/><path d="M9 10 H17"/></svg>Cards</button>
+    <button data-tab="quiz"><svg viewBox="0 0 26 20" class="sym"><path d="M5 10 L10 15 L21 4"/></svg>Quiz</button>
+    <button data-tab="find"><svg viewBox="0 0 26 20" class="sym"><path d="M2 10 H6 L8 6 L11 14 L14 6 L17 14 L19 10 H24"/></svg>Find it</button>
+    <button data-tab="pins"><svg viewBox="0 0 26 20" class="sym"><path d="M3 10 H8"/><path d="M8 4 L8 16 L18 10 Z"/><path d="M18 4 V16"/><path d="M18 10 H23"/></svg>Which end</button>
+  </div>
+</nav>
+
+<script>
+(function(){
+"use strict";
+/* ---------- storage ---------- */
+const KEY='pedal-study-v2';
+let store={known:{},best:{}};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null');if(s&&s.known)store=Object.assign(store,s);}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){}}
+
+/* ---------- svg helpers ---------- */
+const L=(a,b,c,d,cls)=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}"${cls?` class="${cls}"`:''}/>`;
+const P=(d,cls)=>`<path d="${d}"${cls?` class="${cls}"`:''}/>`;
+const R=(x,y,w,h,cls,rx)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}"${rx?` rx="${rx}"`:''}${cls?` class="${cls}"`:''}/>`;
+const C=(x,y,r,cls)=>`<circle cx="${x}" cy="${y}" r="${r}"${cls?` class="${cls}"`:''}/>`;
+const T=(x,y,s,a,cls)=>`<text x="${x}" y="${y}" text-anchor="${a==='start'||a==='end'?a:'middle'}" class="${cls||'lbl'}">${s}</text>`;
+const head=(x,y,ang)=>`<path class="fill" style="stroke-width:1" d="M0,0 L-7,-3.4 L-7,3.4 Z" transform="translate(${x},${y}) rotate(${ang})"/>`;
+const arrow=(a,b,c,d)=>L(a,b,c,d)+head(c,d,Math.atan2(d-b,c-a)*180/Math.PI);
+const G=(s,x,y,rot,mirror)=>`<g transform="translate(${x},${y})${rot?` rotate(${rot})`:''}${mirror?' scale(-1,1)':''}">${s}</g>`;
+const svg=(vb,inner,cls)=>`<svg viewBox="${vb}" class="sym${cls?' '+cls:''}" aria-hidden="true">${inner}</svg>`;
+
+const zig='M0,0 H12 L15,-6 L21,6 L27,-6 L33,6 L39,-6 L45,6 L48,0 H60';
+const ground=(x,y)=>L(x,y,x,y+10)+L(x-10,y+10,x+10,y+10)+L(x-6,y+14,x+6,y+14)+L(x-2,y+18,x+2,y+18);
+const rail=(x,y,t)=>L(x,y,x,y-12)+L(x-9,y-12,x+9,y-12)+T(x,y-17,t,'middle','pmS');
+function flag(x,y,t,dir){
+  const w=t.length*6+12;
+  if(dir==='left') return R(x-w,y-8,w,16,'',3)+T(x-w/2,y+3,t,'middle','pmS');
+  if(dir==='down') return R(x-w/2,y,w,16,'',3)+T(x,y+11,t,'middle','pmS');
+  return R(x,y-8,w,16,'',3)+T(x+w/2,y+3,t,'middle','pmS');
+}
+const diodeBody=bar=>L(0,0,20,0)+P('M20,-10 L20,10 L40,0 Z')+bar+L(40,0,60,0);
+const BAR={plain:L(40,-10,40,10),zener:P('M36,-13 L40,-10 L40,10 L44,13'),schottky:P('M45,-6 L45,-10 L40,-10 L40,10 L35,10 L35,6')};
+const diodeLbl=T(8,22,'anode +')+T(52,22,'cathode −');
+const spdt=L(0,0,13,0)+C(15,0,2)+L(16.5,-1,42,-11)+C(45,-12,2)+C(45,12,2)+L(47,-12,60,-12)+L(47,12,60,12);
+const opBody=(plusTop)=>P('M0,-28 L0,28 L50,0 Z')+L(-14,-14,0,-14)+L(-14,14,0,14)+L(50,0,64,0)+
+  T(7,-10,plusTop?'+':'−','middle','pm')+T(7,18,plusTop?'−':'+','middle','pm');
+const jackMono=R(0,-14,7,28,'fill')+P('M48,-10 H18 L14,-3 L10,-10')+L(7,12,48,12);
+
+const SYM={
+  resUS:{vb:'-8 -26 76 44',f:()=>P(zig)},
+  resBox:{vb:'-8 -26 76 44',f:()=>L(0,0,14,0)+R(14,-6,32,12)+L(46,0,60,0)},
+  cap:{vb:'-8 -26 76 44',f:()=>L(0,0,26,0)+L(26,-12,26,12)+L(34,-12,34,12)+L(34,0,60,0)},
+  ecap:{vb:'-12 -28 84 58',f:lb=>L(0,0,26,0)+L(26,-12,26,12)+P('M37,-12 Q31,0 37,12')+L(33.5,0,60,0)+T(18,-7,'+','middle','pm')+(lb?T(12,24,'+ side')+T(50,24,'− side'):'')},
+  pot:{vb:'-8 -36 82 56',f:lb=>P(zig)+arrow(30,-30,30,-9)+(lb?T(2,14,'1','middle','pin')+T(58,14,'3','middle','pin')+T(35,-25,'2 wiper','start','pin'):'')},
+  trim:{vb:'-8 -32 76 50',f:()=>P(zig)+L(30,-26,30,-10)+L(24,-10,36,-10)},
+  diode:{vb:'-14 -28 90 58',f:lb=>diodeBody(BAR.plain)+(lb?diodeLbl:'')},
+  zener:{vb:'-14 -28 90 58',f:lb=>diodeBody(BAR.zener)+(lb?diodeLbl:'')},
+  schottky:{vb:'-14 -28 90 58',f:lb=>diodeBody(BAR.schottky)+(lb?diodeLbl:'')},
+  led:{vb:'-14 -32 90 62',f:lb=>diodeBody(BAR.plain)+arrow(29,-12,37,-24)+arrow(37,-9,45,-21)+(lb?diodeLbl:'')},
+  ldr:{vb:'-8 -40 76 64',f:()=>L(0,0,14,0)+R(14,-6,32,12)+L(46,0,60,0)+C(30,0,20,'body')+arrow(4,-34,16,-13)+arrow(15,-38,27,-15)},
+  vactrol:{vb:'-12 -32 88 64',f:()=>R(-4,-27,70,54,'dash',4)+P('M6,-10 L22,-10 L14,4 Z')+L(6,4,22,4)+L(14,-26,14,-10)+L(14,4,14,26)+R(44,-12,12,24)+L(50,-26,50,-12)+L(50,12,50,26)+arrow(24,-5,39,-5)+arrow(24,5,39,5)},
+  npn:{vb:'-8 -40 70 80',f:lb=>C(30,0,22,'body')+L(0,0,20,0)+L(20,-13,20,13,'thick')+L(20,-6,38,-17)+L(38,-17,38,-36)+L(20,6,38,17)+L(38,17,38,36)+head(34.4,14.8,31.4)+(lb?T(3,-5,'B','start','pin')+T(43,-26,'C','start','pin')+T(43,32,'E','start','pin'):'')},
+  pnp:{vb:'-8 -40 70 80',f:lb=>C(30,0,22,'body')+L(0,0,20,0)+L(20,-13,20,13,'thick')+L(20,-6,38,-17)+L(38,-17,38,-36)+L(20,6,38,17)+L(38,17,38,36)+head(23.8,-8.3,148.6)+(lb?T(3,-5,'B','start','pin')+T(43,-26,'E','start','pin')+T(43,32,'C','start','pin'):'')},
+  njfet:{vb:'-8 -40 70 80',f:lb=>C(29,0,21,'body')+L(0,8,20,8)+head(19,8,0)+L(20,-14,20,14,'thick')+L(20,-8,38,-8)+L(38,-8,38,-36)+L(20,8,38,8)+L(38,8,38,36)+(lb?T(3,3,'G','start','pin')+T(43,-26,'D','start','pin')+T(43,32,'S','start','pin'):'')},
+  pjfet:{vb:'-8 -40 70 80',f:lb=>C(29,0,21,'body')+L(0,8,20,8)+head(4,8,180)+L(20,-14,20,14,'thick')+L(20,-8,38,-8)+L(38,-8,38,-36)+L(20,8,38,8)+L(38,8,38,36)+(lb?T(3,3,'G','start','pin')+T(43,-26,'D','start','pin')+T(43,32,'S','start','pin'):'')},
+  nmos:{vb:'-8 -40 70 80',f:lb=>C(27,0,22,'body')+L(0,10,12,10)+L(12,-12,12,12)+L(19,-14,19,-6,'thick')+L(19,-4,19,4,'thick')+L(19,6,19,14,'thick')+L(19,-10,38,-10)+L(38,-10,38,-36)+L(19,10,38,10)+L(38,10,38,36)+L(19,0,38,0)+L(38,0,38,10)+head(21,0,180)+(lb?T(2,22,'G','start','pin')+T(43,-26,'D','start','pin')+T(43,32,'S','start','pin'):'')},
+  opamp:{vb:'-64 -38 142 76',f:lb=>opBody(false)+(lb?T(-17,-11,'inverting −','end')+T(-17,17,'non-inv +','end')+T(66,-5,'out','start')+L(20,-16.8,20,-30)+T(24,-27,'V+ (9V)','start')+L(20,16.8,20,30)+T(24,33,'V− (gnd)','start'):'')},
+  ota:{vb:'-30 -44 110 84',f:()=>opBody(false)+L(25,-14,25,-36)+T(29,-31,'Iabc','start','pmS')+T(26,4,'OTA','middle','pmS')},
+  ic:{vb:'-16 -36 76 72',f:()=>R(0,-30,44,60)+P('M16,-30 A6,6 0 0 0 28,-30')+[-21,-7,7,21].map(y=>L(-10,y,0,y)+L(44,y,54,y)).join('')+T(22,4,'U1','middle','pm')},
+  reg:{vb:'-18 -22 96 54',f:lb=>R(0,-14,48,28)+T(24,3,'78L09','middle','pmS')+L(-12,0,0,0)+L(48,0,60,0)+L(24,14,24,26)+(lb?T(-14,-5,'IN','start')+T(62,-5,'OUT','end')+T(28,27,'GND','start'):'')},
+  inductor:{vb:'-8 -22 76 36',f:()=>P('M0,0 H12 a4.5,4.5 0 0 1 9,0 a4.5,4.5 0 0 1 9,0 a4.5,4.5 0 0 1 9,0 a4.5,4.5 0 0 1 9,0 H60')},
+  battery:{vb:'-8 -26 76 58',f:lb=>L(0,0,26,0)+L(26,-14,26,14)+L(34,-7,34,7,'thick')+L(34,0,60,0)+T(19,-9,'+','middle','pm')+(lb?T(24,26,'+ long','end')+T(38,26,'− short','start'):'')},
+  ground:{vb:'0 -22 60 44',f:()=>ground(30,-14)},
+  rail:{vb:'0 -18 60 40',f:()=>rail(30,14,'+9V')+L(30,14,30,22)},
+  vref:{vb:'-6 -16 76 32',f:()=>L(0,0,22,0)+flag(22,0,'VREF','right')},
+  junction:{vb:'-4 -34 68 68',f:()=>L(0,0,60,0)+L(30,-30,30,30)+C(30,0,3.6,'fill')},
+  cross:{vb:'-4 -34 68 68',f:()=>L(0,0,60,0)+L(30,-30,30,30)},
+  hop:{vb:'-4 -34 68 68',f:()=>L(0,0,24,0)+P('M24,0 A6,6 0 0 1 36,0')+L(36,0,60,0)+L(30,-30,30,30)},
+  net:{vb:'-4 -30 72 60',f:()=>L(0,-14,18,-14)+flag(18,-14,'TONE','right')+L(46,16,64,16)+flag(46,16,'TONE','left')},
+  mono:{vb:'-6 -24 76 44',f:lb=>jackMono+(lb?T(52,-7,'T tip','start')+T(52,15,'S sleeve','start'):'')},
+  stereo:{vb:'-6 -26 80 50',f:lb=>R(0,-17,7,34,'fill')+P('M48,-12 H18 L14,-5 L10,-12')+P('M48,0 H22 L18,7 L14,0')+L(7,13,48,13)+(lb?T(51,-9,'T','start','pin')+T(51,3,'R','start','pin')+T(51,16,'S','start','pin'):'')},
+  dc:{vb:'-4 -30 104 50',f:lb=>C(18,0,12)+C(18,0,3,'fill')+L(18,0,52,0)+P('M18,-12 V-22 H52')+(lb?T(55,3,'− center','start')+T(55,-19,'+ sleeve','start'):T(18,24,'9V DC','middle','pmS'))},
+  spst:{vb:'-8 -24 76 36',f:()=>L(0,0,13,0)+C(15,0,2)+L(16.5,-1,42,-13)+C(45,0,2)+L(47,0,60,0)},
+  spdt:{vb:'-8 -26 76 48',f:lb=>spdt+(lb?T(2,12,'common','start')+T(60,-17,'A','end','pin')+T(60,25,'B','end','pin'):'')},
+  fs3pdt:{vb:'-8 -52 76 100',f:()=>[-34,0,34].map(y=>G(spdt,0,y)).join('')+L(29,-44,29,30,'dash')},
+  relay:{vb:'-8 -30 96 60',f:()=>R(0,-12,16,24)+L(0,12,16,-12)+L(8,-12,8,-24)+L(8,12,8,24)+G(spdt,26,0)+L(16,0,40,-4,'dash')},
+};
+const sym=(k,lb)=>svg(SYM[k].vb,SYM[k].f(!!lb));
+
+/* real parts */
+function to92(name,pins){
+  return svg('-6 -6 60 88',P('M2,30 V6 Q2,0 8,0 H40 Q46,0 46,6 V30 Z')+T(24,18,name,'middle','pmS')+L(12,30,12,62)+L(24,30,24,62)+L(36,30,36,62)+
+    T(12,76,pins[0],'middle','pin')+T(24,76,pins[1],'middle','pin')+T(36,76,pins[2],'middle','pin'));
+}
+const diodeReal=lb=>svg('-6 -16 100 42',L(0,0,22,0)+R(22,-7,40,14,'',3)+R(52,-7,6,14,'fill')+L(62,0,84,0)+(lb?T(10,18,'anode +')+T(72,18,'cathode −')+T(55,-11,'band'):''));
+const ledReal=lb=>svg('-24 -4 128 110',P('M8,34 V12 A12,12 0 0 1 32,12 V34')+R(4,34,32,5,'',1)+L(14,39,14,86)+L(26,39,26,70)+
+  P('M63,11.3 A14,14 0 1 0 63,32.7 Z')+T(54,54,'top view','middle','pmS')+
+  (lb?T(14,98,'+ long')+T(30,80,'− short','start')+T(66,24,'flat = −','start'):''));
+const ecapReal=lb=>svg('-18 -6 84 108',R(0,0,32,52,'',5)+R(22,1,9,50,'fillA')+[16,30,44].map(y=>T(26.5,y,'−','middle','inv')).join('')+L(9,52,9,88)+L(25,52,25,74)+
+  (lb?T(9,99,'+ long')+T(30,84,'− short','start'):''));
+function dip8(lb){
+  const ys=[15,35,55,75];let s=R(0,0,60,90,'',3)+P('M22,0 A8,8 0 0 0 38,0')+C(9,6.5,2.2,'fill');
+  const lf=['OUT A','IN− A','IN+ A','V− gnd'],rt=['V+ 9V','OUT B','IN− B','IN+ B'];
+  ys.forEach((y,i)=>{s+=L(-10,y,0,y)+L(60,y,70,y)+T(6,y+3,String(i+1),'start','pinN')+T(54,y+3,String(8-i),'end','pinN');
+    if(lb)s+=T(-13,y+3,lf[i],'end')+T(73,y+3,rt[i],'start');});
+  return svg(lb?'-44 -8 152 106':'-14 -8 88 106',s);
+}
+const potReal=lb=>svg('-6 -4 92 114',C(40,32,28)+C(40,32,9)+L(40,23,40,30)+R(17,60,8,22,'',2)+R(36,60,8,22,'',2)+R(55,60,8,22,'',2)+
+  T(21,94,'1','middle','pin')+T(40,94,'2','middle','pin')+T(59,94,'3','middle','pin')+(lb?T(40,106,'wiper'):''));
+const plug=svg('-4 -14 120 40',R(0,-7,66,14,'',2)+R(66,-6,4,12,'fill')+P('M70,-7 H90 Q102,0 90,7 H70 Z')+T(30,19,'sleeve = ground')+T(88,19,'tip = signal'));
+
+/* ---------- decks ---------- */
+const DECKS={
+ symbols:{name:'Symbols',cards:[
+  {s:'resUS',a:'Resistor (zigzag style)',ref:'R',d:'Limits current and sets voltages. Pedals use them for gain, bias, pulldowns and tone.',alt:['Resistor (box style)','Inductor','Trimmer (trim pot)']},
+  {s:'resBox',a:'Resistor (box style)',ref:'R',d:'Same part as the zigzag resistor. The box is the European way of drawing it.',alt:['Resistor (zigzag style)','LDR (light-dependent resistor)']},
+  {s:'cap',a:'Capacitor (non-polarized)',ref:'C',d:'Two flat plates. Film or ceramic. Passes the guitar signal, blocks DC. Can go in either way round.',alt:['Electrolytic capacitor (polarized)','Battery']},
+  {s:'ecap',a:'Electrolytic capacitor (polarized)',ref:'C',d:'One curved plate and a + sign. The curved plate is the negative side. Must go in the right way round.',lb:1,alt:['Capacitor (non-polarized)','Battery']},
+  {s:'pot',a:'Potentiometer (pot)',ref:'VR / RV',d:'A knob. The arrow is the wiper, the middle lug. Often labelled by its job: GAIN, VOLUME, TONE.',lb:1,alt:['Trimmer (trim pot)','LDR (light-dependent resistor)']},
+  {s:'trim',a:'Trimmer (trim pot)',ref:'VR / RV / TR',d:'A small adjustable resistor inside the pedal, set once with a screwdriver. Common for bias.',alt:['Potentiometer (pot)','Resistor (zigzag style)']},
+  {s:'diode',a:'Diode',ref:'D',d:'Current flows the way the triangle points. Bar = cathode (−). Used for clipping and polarity protection.',lb:1,alt:['Zener diode','Schottky diode','LED']},
+  {s:'zener',a:'Zener diode',ref:'D / ZD',d:'Bar with bent tails. Holds a set voltage. Used to limit or regulate voltage.',lb:1,alt:['Diode','Schottky diode']},
+  {s:'schottky',a:'Schottky diode',ref:'D',d:'Bar with S-shaped hooks. Low voltage drop. The usual polarity-protection diode on the 9V input (1N5817).',lb:1,alt:['Zener diode','Diode']},
+  {s:'led',a:'LED',ref:'D / LED',d:'A diode with arrows pointing out (light leaving). Status light, and sometimes a clipping diode.',lb:1,alt:['Diode','LDR (light-dependent resistor)']},
+  {s:'ldr',a:'LDR (light-dependent resistor)',ref:'LDR',d:'A resistor with arrows pointing in (light arriving). Resistance changes with light. Tremolos and opto compressors.',alt:['LED','Vactrol / optocoupler']},
+  {s:'vactrol',a:'Vactrol / optocoupler',ref:'OC / VTL',d:'An LED and an LDR sealed together. The LED controls the resistance. Tremolo, phaser, opto compressor.',alt:['LDR (light-dependent resistor)','Relay']},
+  {s:'npn',a:'NPN transistor',ref:'Q',d:'Arrow on the emitter pointing out. Memory trick: Not Pointing iN.',lb:1,alt:['PNP transistor','N-channel JFET','N-channel MOSFET']},
+  {s:'pnp',a:'PNP transistor',ref:'Q',d:'Arrow on the emitter pointing in. Memory trick: Pointing iN Proudly. Classic germanium fuzzes use PNP.',lb:1,alt:['NPN transistor','P-channel JFET']},
+  {s:'njfet',a:'N-channel JFET',ref:'Q',d:'Arrow on the gate pointing in toward the channel. J201 and 2N5457 are common.',lb:1,alt:['P-channel JFET','NPN transistor','N-channel MOSFET']},
+  {s:'pjfet',a:'P-channel JFET',ref:'Q',d:'Arrow on the gate pointing out. Rare in pedals; used in some switching circuits.',lb:1,alt:['N-channel JFET','PNP transistor']},
+  {s:'nmos',a:'N-channel MOSFET',ref:'Q',d:'Gate drawn as a separate line that does not touch the rest. Broken middle line, arrow tied to the source.',lb:1,alt:['N-channel JFET','NPN transistor']},
+  {s:'opamp',a:'Op amp',ref:'U / IC',d:'Triangle with − and + inputs; the point is the output. Power pins are often left off the drawing.',lb:1,alt:['OTA (transconductance amp)','Integrated circuit (chip)']},
+  {s:'ota',a:'OTA (transconductance amp)',ref:'U / IC',d:'Looks like an op amp with an extra control input (Iabc) that sets its gain. LM13700, CA3080.',alt:['Op amp','Voltage regulator']},
+  {s:'ic',a:'Integrated circuit (chip)',ref:'U / IC',d:'A box with numbered pins. Delay chips, switching chips and charge pumps are often drawn this way.',alt:['Voltage regulator','Op amp']},
+  {s:'reg',a:'Voltage regulator',ref:'U / IC / VR',d:'Three pins: IN, GND, OUT. Turns a higher voltage into a steady lower one.',lb:1,alt:['Integrated circuit (chip)','DC power jack']},
+  {s:'inductor',a:'Inductor',ref:'L',d:'A row of loops. Rare in pedals except wahs, where the inductor is the heart of the sound.',alt:['Resistor (zigzag style)','Relay']},
+  {s:'battery',a:'Battery',ref:'B / BT',d:'Long thin plate = +, short thick plate = −.',lb:1,alt:['Capacitor (non-polarized)','Electrolytic capacitor (polarized)']},
+  {s:'ground',a:'Ground',ref:'GND',d:'0 volts. Every ground symbol is connected to every other one, and to the negative side of the supply.',alt:['Power supply rail (+9V)','VREF / bias label']},
+  {s:'rail',a:'Power supply rail (+9V)',ref:'+9V / VCC / V+',d:'Anything touching this label connects to the positive supply.',alt:['Ground','VREF / bias label']},
+  {s:'vref',a:'VREF / bias label',ref:'VREF / VB / 4.5V',d:'About 4.5V, half the supply. Every point with this label is connected, even with no wire drawn.',alt:['Net label','Power supply rail (+9V)']},
+  {s:'junction',a:'Junction (connected)',ref:'dot',d:'The dot means these wires are joined.',alt:['Crossing wires (not connected)','Wire hop (not connected)']},
+  {s:'cross',a:'Crossing wires (not connected)',ref:'no dot',d:'No dot, so the wires just pass over each other. Check the schematic’s style: most use this convention.',alt:['Junction (connected)','Wire hop (not connected)']},
+  {s:'hop',a:'Wire hop (not connected)',ref:'bridge',d:'An older way to show that one wire jumps over another without touching.',alt:['Junction (connected)','Crossing wires (not connected)']},
+  {s:'net',a:'Net label',ref:'name tag',d:'Two tags with the same name are connected, even though no line joins them.',alt:['VREF / bias label','Junction (connected)']},
+  {s:'mono',a:'Mono jack (input / output)',ref:'J',d:'Tip carries the guitar signal. Sleeve is ground.',lb:1,alt:['Stereo jack (TRS)','DC power jack']},
+  {s:'stereo',a:'Stereo jack (TRS)',ref:'J',d:'Tip, ring, sleeve. On many pedal inputs the ring is used to switch the battery on only when a cable is plugged in.',lb:1,alt:['Mono jack (input / output)','DC power jack']},
+  {s:'dc',a:'DC power jack',ref:'J / DC',d:'Pedal standard: center pin negative, sleeve positive.',lb:1,alt:['Mono jack (input / output)','Battery']},
+  {s:'spst',a:'On/off switch (SPST)',ref:'SW / S',d:'Single pole, single throw: one connection, on or off.',alt:['Toggle switch (SPDT)','Relay']},
+  {s:'spdt',a:'Toggle switch (SPDT)',ref:'SW / S',d:'The common terminal connects to A or B. Used for things like choosing clipping diodes.',lb:1,alt:['On/off switch (SPST)','3PDT footswitch']},
+  {s:'fs3pdt',a:'3PDT footswitch',ref:'SW / FS',d:'Three switches moved by one stomp (the dashed line links them). The usual true-bypass footswitch.',alt:['Toggle switch (SPDT)','Relay']},
+  {s:'relay',a:'Relay',ref:'K / RL',d:'A coil (box) that flips a switch when powered. Used for soft-touch bypass.',alt:['3PDT footswitch','Vactrol / optocoupler']},
+ ]},
+ pins:{name:'Which end',cards:[
+  {q:'Which end of this diode is the cathode (−)?',fig:()=>sym('diode'),back:()=>sym('diode',1),a:'The bar end',d:'Triangle side = anode (+). Bar side = cathode (−). Current flows the way the triangle points.',o:['The triangle end','Either end','The middle']},
+  {q:'On a real diode, how do you find the cathode?',fig:()=>diodeReal(0),back:()=>diodeReal(1),a:'The painted band',d:'The band on the body lines up with the bar in the symbol.',o:['The longer leg','The flat side','The printed + sign']},
+  {q:'Which LED leg is positive?',fig:()=>ledReal(0),back:()=>ledReal(1),a:'The longer leg (anode)',d:'The short leg is the cathode (−), on the side where the rim has a flat edge.',o:['The shorter leg','The leg by the flat edge','Either leg']},
+  {q:'Which side of this capacitor is negative?',fig:()=>sym('ecap'),back:()=>sym('ecap',1),a:'The curved plate',d:'The + sign marks the straight plate. The + side goes toward the higher voltage.',o:['The straight plate','The side with the + sign','Neither, it has no polarity']},
+  {q:'Real electrolytic cap: which leg is negative?',fig:()=>ecapReal(0),back:()=>ecapReal(1),a:'The leg under the stripe',d:'The stripe is printed with − signs, and that leg is usually the shorter one.',o:['The longer leg','The leg away from the stripe','Either leg']},
+  {q:'Battery symbol: which plate is positive?',fig:()=>sym('battery'),back:()=>sym('battery',1),a:'The long, thin plate',d:'The short, thick plate is negative.',o:['The short, thick plate','Whichever is on the left','Neither']},
+  {q:'Which leg of a transistor symbol has the arrow?',fig:()=>sym('npn'),back:()=>sym('npn',1),a:'The emitter',d:'The base is the flat bar. The other angled leg, without an arrow, is the collector.',o:['The base','The collector','The gate']},
+  {q:'NPN or PNP?',fig:()=>sym('npn'),back:()=>sym('npn',1),a:'NPN: arrow points out',d:'Memory trick: NPN = Not Pointing iN.',o:['PNP: arrow points in','JFET','MOSFET']},
+  {q:'NPN or PNP?',fig:()=>sym('pnp'),back:()=>sym('pnp',1),a:'PNP: arrow points in',d:'Memory trick: PNP = Pointing iN Proudly.',o:['NPN: arrow points out','JFET','MOSFET']},
+  {q:'In a typical NPN stage, which leg heads toward +9V?',fig:()=>sym('npn',1),a:'The collector',d:'Usually through a resistor. The emitter heads toward ground. In a PNP stage it is the other way round.',o:['The emitter','The base','None of them']},
+  {q:'JFET: what are the three legs called?',fig:()=>sym('njfet'),back:()=>sym('njfet',1),a:'Gate, drain, source',d:'The arrow is on the gate. Arrow pointing in = N-channel. The drain usually heads toward +9V.',o:['Base, collector, emitter','Anode, cathode, gate','Input, output, ground']},
+  {q:'MOSFET: which leg is the gate?',fig:()=>sym('nmos'),back:()=>sym('nmos',1),a:'The line that doesn’t touch the others',d:'The gate is insulated from the channel. The source is the leg tied to the arrow.',o:['The leg with the arrow','The top leg','The broken middle line']},
+  {q:'Where is pin 1 on a chip?',fig:()=>dip8(0),back:()=>dip8(1),a:'Next to the notch or dot',d:'Count down the left side (1 to 4), then up the right side (5 to 8).',o:['Bottom right corner','Opposite the notch','Top right corner']},
+  {q:'Dual op amp (TL072, 4558): which pins are power?',fig:()=>dip8(0),back:()=>dip8(1),a:'Pin 8 = +9V, pin 4 = ground',d:'In pedals with a −9V supply, pin 4 goes to −9V instead of ground.',o:['Pin 1 = +9V, pin 8 = ground','Pin 7 = +9V, pin 1 = ground','Pin 4 = +9V, pin 8 = ground']},
+  {q:'Dual op amp: which pins are the two outputs?',fig:()=>dip8(0),back:()=>dip8(1),a:'Pin 1 and pin 7',d:'Each output sits right beside its own − input (pins 2 and 6).',o:['Pin 4 and pin 8','Pin 3 and pin 5','Pin 2 and pin 6']},
+  {q:'Pot, shaft facing you, lugs down: which lug is the wiper?',fig:()=>potReal(0),back:()=>potReal(1),a:'The middle lug (2)',d:'Lug 1 is on the left, lug 3 on the right. Turning clockwise moves the wiper toward lug 3.',o:['Lug 1','Lug 3','The metal case']},
+  {q:'Standard pedal DC jack: what is the center pin?',fig:()=>sym('dc'),back:()=>sym('dc',1),a:'Negative (center negative)',d:'The sleeve is +9V. Boss style, and the reverse of most other electronics.',o:['Positive (center positive)','Ground only, no power','It depends on the knob']},
+  {q:'Guitar jack: which contact carries the signal?',fig:()=>plug,a:'The tip',d:'The sleeve is ground. On a stereo input jack the ring often switches the battery on.',o:['The sleeve','The ring','All three']},
+  {q:'What voltage is ground?',fig:()=>sym('ground'),a:'0V',d:'Every ground symbol connects together and to the negative side of the supply.',o:['9V','4.5V','−9V']},
+  {q:'What voltage is VREF in a 9V pedal?',fig:()=>sym('vref'),a:'About 4.5V',d:'Half the supply. The guitar signal swings up and down around it.',o:['0V','9V','18V']},
+  {q:'Op amp: which input is which?',fig:()=>sym('opamp'),back:()=>sym('opamp',1),a:'− inverting, + non-inverting',d:'The point of the triangle is the output. Check each drawing: sometimes + is on top.',o:['− output, + input','− ground, + power','+ inverting, − non-inverting']},
+ ]},
+ values:{name:'Values',cards:[
+  ['1k','1,000 Ω','k means thousand.'],['4k7','4,700 Ω (4.7k)','The letter sits where the decimal point goes: 4k7 = 4.7k.'],
+  ['10k','10,000 Ω',''],['100k','100,000 Ω',''],['1M','1,000,000 Ω (1 meg)','M means million.'],
+  ['2M2','2,200,000 Ω (2.2M)','The M marks the decimal point.'],['470R','470 Ω','R marks plain ohms.'],['1k5','1,500 Ω (1.5k)',''],
+  ['100p','100 picofarads','p = pico, the smallest unit. 1,000p = 1n.'],['47p','47 pF','Tiny caps like this often sit across an op amp’s feedback resistor to tame fizz.'],
+  ['4n7','4.7 nanofarads','n = nano. 1,000n = 1u.'],['22n','22 nF',''],['100n','100 nF (0.1 µF)','The same value is printed as 104 on many small caps.'],
+  ['1u','1 microfarad','u stands in for µ (micro).'],['2u2','2.2 µF',''],['100u','100 µF','Caps this big are almost always electrolytic (polarized).'],
+  ['A100k','100k pot, audio (log) taper','A = audio taper. Normal for volume knobs.'],['B10k','10k pot, linear taper','B = linear taper.'],
+  ['C1M','1M pot, reverse-log taper','C = reverse audio taper. Seen on some gain knobs.'],
+  ['104','100 nF (code printed on the cap)','First two digits, then that many zeros, in picofarads: 10 + 0000 = 100,000 pF = 100 nF.'],
+ ].map(([f,a,d])=>({big:f,q:'What does this marking mean?',a,d}))},
+ parts:{name:'Part numbers',cards:[
+  ['1N4148','Silicon signal diode','The standard clipping diode in overdrives and distortions.'],
+  ['1N914','Silicon signal diode','Almost the same as the 1N4148.'],
+  ['1N34A','Germanium diode','Lower turn-on voltage, so softer clipping.'],
+  ['1N5817','Schottky diode','Usually polarity protection on the 9V input. Drops very little voltage.'],
+  ['1N4001','Rectifier diode','Also used for polarity protection.'],
+  ['2N3904','NPN transistor (silicon)','General purpose: boosts, buffers, switching.'],
+  ['2N5088','NPN transistor, high gain','Common in fuzz and Big Muff style circuits.'],
+  ['AC128','PNP germanium transistor','A classic Fuzz Face part.'],
+  ['2N5457','N-channel JFET','Buffers, boosts and amp-like JFET drives.'],
+  ['J201','N-channel JFET','Very common in JFET boosts and preamps.'],
+  ['2N7000','N-channel MOSFET','Small MOSFET used in some boosts and switching.'],
+  ['TL072','Dual op amp','Two op amps in one 8-pin chip. Very common.'],
+  ['JRC4558','Dual op amp','The Tube Screamer chip.'],
+  ['NE5532','Dual op amp, low noise','Often swapped in for lower hiss.'],
+  ['LM308','Single op amp','The ProCo RAT chip.'],
+  ['LM13700','Dual OTA','Voltage-controlled gain: compressors, phasers, tremolos, filters.'],
+  ['MN3207','BBD (bucket brigade delay) chip','Analog chorus, flanger and short delay.'],
+  ['MN3102','Clock chip for a BBD','Sets how fast the BBD passes the signal along.'],
+  ['PT2399','Echo / delay chip','Found in lots of DIY and budget delay pedals.'],
+  ['FV-1','DSP effects chip','Digital reverb, delay and modulation in many boutique pedals.'],
+  ['78L09','Voltage regulator (9V)','Small three-pin regulator. The 78L05 gives 5V.'],
+  ['TC1044','Charge pump','Makes −9V or 18V from 9V. Relatives: LT1044, MAX1044, ICL7660.'],
+  ['CD4066','Analog switch chip','Electronic switching, such as soft-touch bypass.'],
+ ].map(([f,a,d])=>({big:f,q:'What kind of part is this?',a,d}))},
+ letters:{name:'Letters',cards:[
+  ['R','Resistor',''],['C','Capacitor',''],['D','Diode','LEDs are often labelled D too.'],['Q','Transistor','BJTs, JFETs and MOSFETs all use Q.'],
+  ['U / IC','Chip','Op amps, regulators, delay chips.'],['VR / RV','Potentiometer or trimmer','Many schematics just print the knob name: GAIN, LEVEL.'],
+  ['L','Inductor',''],['SW / S','Switch',''],['J','Jack','Input, output and DC jacks.'],['K / RL','Relay',''],['LDR','Light-dependent resistor',''],['OC','Optocoupler / vactrol',''],
+ ].map(([f,a,d])=>({big:f,q:'What part does this reference letter mean?',a,d}))},
+};
+// ids + resolved figures
+Object.entries(DECKS).forEach(([k,dk])=>dk.cards.forEach((c,i)=>{c.id=k+':'+(c.s||c.big||c.q)+':'+c.a;c.deck=k;
+  if(c.s){c.q='What is this?';c.fig=()=>sym(c.s);c.back=()=>sym(c.s,c.lb);}
+}));
+const ORDER=['symbols','pins','values','parts','letters'];
+
+/* ---------- utils ---------- */
+const $=(s,r)=>(r||document).querySelector(s);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const byId=id=>{const k=id.split(':')[0];return DECKS[k].cards.find(c=>c.id===id);};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function frontFig(c){return c.big?`<div class="big">${esc(c.big)}</div>`:(c.fig?c.fig():'');}
+function knownCount(k){return DECKS[k].cards.filter(c=>store.known[c.id]).length;}
+function updateTotal(){let n=0,t=0;ORDER.forEach(k=>{n+=knownCount(k);t+=DECKS[k].cards.length;});$('#knownTotal').textContent=n+'/'+t+' known';}
+
+/* ---------- flashcards ---------- */
+const fc={deck:'symbols',queue:[],cur:null,flipped:false};
+function chipsHTML(active,attr){return ORDER.map(k=>`<button class="chip" ${attr}="${k}" aria-pressed="${k===active}">${DECKS[k].name}</button>`).join('');}
+function drawDeckChips(){$('#deckChips').innerHTML=chipsHTML(fc.deck,'data-deck');}
+function drawProgress(){const n=knownCount(fc.deck),t=DECKS[fc.deck].cards.length;$('#progTxt').textContent=`${n}/${t} known`;$('#progBar').style.width=(100*n/t)+'%';updateTotal();}
+function startDeck(k,all){
+  fc.deck=k;drawDeckChips();
+  const cards=DECKS[k].cards.filter(c=>all||!store.known[c.id]);
+  fc.queue=shuffle(cards.map(c=>c.id));nextCard();
+}
+function nextCard(){
+  drawProgress();fc.flipped=false;
+  if(!fc.queue.length){fc.cur=null;
+    $('#cardZone').innerHTML=`<div class="done"><h2>Deck done</h2><p>You marked every card in <b>${DECKS[fc.deck].name}</b> as known.</p>
+    <div class="row"><button class="btn primary" id="redo">Go through them again</button><button class="btn ghost" id="reset">Reset this deck</button></div></div>`;
+    return;}
+  fc.cur=byId(fc.queue.shift());const c=fc.cur;
+  const left=fc.queue.length+1;
+  $('#cardZone').innerHTML=`
+  <div class="card" id="card" tabindex="0" role="button" aria-label="Card. Tap to flip.">
+    <div class="inner">
+      <div class="face front"><span class="corner">${left} left</span><div class="q">${esc(c.q)}</div><div class="fig">${frontFig(c)}</div><div class="tap">Tap to flip</div></div>
+      <div class="face back">${c.back?`<div class="fig">${c.back()}</div>`:(c.big?`<div class="big" style="font-size:30px">${esc(c.big)}</div>`:'')}
+        <h2 class="ans">${esc(c.a)}</h2>${c.ref?`<div><span class="refchip">${esc(c.ref)}</span></div>`:''}<p class="detail">${esc(c.d||'')}</p></div>
+    </div>
+  </div>
+  <div class="actions"><button class="btn again" id="again" hidden>Again</button><button class="btn got" id="got" hidden>Got it</button></div>`;
+}
+function flip(){const el=$('#card');if(!el)return;fc.flipped=!fc.flipped;el.classList.toggle('flipped',fc.flipped);$('#again').hidden=$('#got').hidden=false;}
+$('#v-cards').addEventListener('click',e=>{
+  const t=e.target.closest('button,.card');if(!t)return;
+  if(t.dataset.deck){startDeck(t.dataset.deck);}
+  else if(t.id==='card')flip();
+  else if(t.id==='got'){store.known[fc.cur.id]=1;save();nextCard();}
+  else if(t.id==='again'){fc.queue.splice(Math.min(3,fc.queue.length),0,fc.cur.id);nextCard();}
+  else if(t.id==='redo')startDeck(fc.deck,true);
+  else if(t.id==='reset'){DECKS[fc.deck].cards.forEach(c=>delete store.known[c.id]);save();startDeck(fc.deck);}
+});
+$('#v-cards').addEventListener('keydown',e=>{if(e.target.id==='card'&&(e.key===' '||e.key==='Enter')){e.preventDefault();flip();}});
+
+/* ---------- quiz ---------- */
+const qz={deck:'symbols',items:[],i:0,score:0,missed:[],answered:false};
+function startQuiz(k){
+  qz.deck=k;$('#quizChips').innerHTML=chipsHTML(k,'data-qdeck');
+  qz.items=shuffle(DECKS[k].cards).slice(0,10);qz.i=0;qz.score=0;qz.missed=[];drawQ();
+}
+function optionsFor(c){
+  let wrong;
+  if(c.o)wrong=c.o.slice(0,3);
+  else{const pool=DECKS[c.deck].cards.filter(x=>x.a!==c.a).map(x=>x.a);
+    const pri=shuffle((c.alt||[]).filter(a=>pool.includes(a)));
+    wrong=[...new Set(pri.concat(shuffle(pool)))].slice(0,3);}
+  return shuffle(wrong.concat(c.a));
+}
+function drawQ(){
+  const z=$('#quizZone');qz.answered=false;
+  if(qz.i>=qz.items.length){
+    const best=Math.max(store.best[qz.deck]||0,qz.score);store.best[qz.deck]=best;save();
+    z.innerHTML=`<div class="done"><p class="tag">${DECKS[qz.deck].name}</p><p class="score">${qz.score}/${qz.items.length}</p><p>Best so far: ${best}/10</p>
+    ${qz.missed.length?`<p style="margin-bottom:0"><b>Review these:</b></p><ul class="missed">${qz.missed.map(c=>`<li>${esc(c.a)}</li>`).join('')}</ul>`:'<p>Clean sweep.</p>'}
+    <div class="row"><button class="btn primary" id="qagain">New round</button></div></div>`;return;}
+  const c=qz.items[qz.i];
+  z.innerHTML=`<div class="qcard"><div class="qhead"><span>Question ${qz.i+1} of ${qz.items.length}</span><span>Score ${qz.score}</span></div>
+    <div class="q">${esc(c.q)}</div><div class="fig">${frontFig(c)}</div>
+    <div class="opts">${optionsFor(c).map(o=>`<button class="opt" data-opt="${esc(o)}">${esc(o)}</button>`).join('')}</div>
+    <div id="qfb"></div></div>`;
+}
+$('#v-quiz').addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.qdeck){startQuiz(t.dataset.qdeck);return;}
+  if(t.id==='qagain'){startQuiz(qz.deck);return;}
+  if(t.id==='qnext'){qz.i++;drawQ();window.scrollTo({top:0});return;}
+  if(t.classList.contains('opt')&&!qz.answered){
+    qz.answered=true;const c=qz.items[qz.i];const ok=t.dataset.opt===c.a;
+    if(ok)qz.score++;else qz.missed.push(c);
+    document.querySelectorAll('.opt').forEach(b=>{b.disabled=true;if(b.dataset.opt===c.a)b.classList.add('right');});
+    if(!ok)t.classList.add('wrong');
+    $('#qfb').innerHTML=`<p class="explain"><b>${ok?'Right.':'It’s: '+esc(c.a)+'.'}</b> ${esc(c.d||'')}</p><button class="btn primary" id="qnext" style="width:100%;margin-top:10px">${qz.i+1<qz.items.length?'Next':'See score'}</button>`;
+  }
+});
+
+/* ---------- find it: example schematic ---------- */
+const S=SYM;
+const W=(pts)=>`<polyline class="w" points="${pts}" fill="none"/>`;
+const dot=(x,y)=>`<circle class="dot" cx="${x}" cy="${y}" r="3.2"/>`;
+const tx=(x,y,s,cls,a)=>`<text x="${x}" y="${y}" class="${cls||'ref'}" text-anchor="${a||'start'}">${s}</text>`;
+const f=k=>S[k].f(false);
+let draw='';
+// input
+draw+=G(jackMono,20,150)+ground(68,162)+W('68,140 130,140')+dot(110,140)+G(f('resUS'),110,140,90)+ground(110,200);
+draw+=G(f('cap'),130,140)+W('190,140 236,140')+dot(210,140)+G(f('resUS'),210,140,90)+W('210,200 210,208')+flag(210,208,'VREF','down');
+// op amp gain stage
+draw+=G(opBody(true),250,154)+L(270,137.2,270,118)+rail(270,118,'+9V')+L(270,170.8,270,186)+ground(270,186);
+draw+=tx(274,131,'8','val')+tx(274,182,'4','val');
+draw+=W('314,154 350,154')+dot(330,154)+W('236,168 236,220 256,220')+dot(236,220)+G(f('resUS'),256,220)+W('316,220 330,220 330,154');
+draw+=G(f('resUS'),236,220,90)+G(f('pot'),236,280,90)+W('266,310 266,340 236,340')+dot(236,340)+G(f('cap'),236,340,90)+ground(236,400);
+// clipping
+draw+=G(f('ecap'),350,154)+W('410,154 530,154')+dot(430,154)+dot(470,154);
+draw+=G(diodeBody(BAR.plain),430,154,90)+ground(430,214)+G(diodeBody(BAR.plain),470,214,-90)+ground(470,214);
+// volume + output
+draw+=G(f('pot'),530,154,90)+ground(530,214)+W('560,184 632,184')+G(jackMono,680,194,0,true)+ground(632,206);
+// vref
+draw+=rail(420,270,'+9V')+G(f('resUS'),420,270,90)+G(f('resUS'),420,330,90)+ground(420,390)+dot(420,330)+W('392,330 470,330')+flag(392,330,'VREF','left');
+draw+=G(f('ecap'),470,330,90)+ground(470,390);
+// power
+draw+=G(C(18,0,12)+C(18,0,3,'fill')+L(18,0,52,0)+P('M18,-12 V-22 H52'),548,300)+ground(600,300);
+draw+=W('600,278 610,278')+G(diodeBody(BAR.schottky),610,278)+W('670,278 680,278')+G(f('resUS'),680,278)+W('740,278 800,278')+dot(760,278)+rail(760,278,'+9V');
+draw+=G(f('ecap'),760,278,90)+ground(760,338)+G(f('resUS'),800,278,90)+G(S.led.f(false),800,338,90)+ground(800,398);
+// labels
+draw+=tx(14,200,'J1 IN')+tx(120,166,'R1')+tx(120,178,'1M','val')+tx(160,121,'C1','ref','middle')+tx(160,168,'10n','val','middle')+tx(220,166,'R2')+tx(220,178,'1M','val');
+draw+=tx(298,124,'U1A')+tx(298,136,'TL072','val')+tx(286,208,'R3','ref','middle')+tx(306,208,'1M','val','start');
+draw+=tx(246,246,'R4')+tx(246,258,'4k7','val')+tx(274,296,'VR1')+tx(274,308,'GAIN','val')+tx(274,320,'C1M','val')+tx(246,366,'C3')+tx(246,378,'47n','val');
+draw+=tx(366,132,'C4')+tx(384,132,'1u','val')+tx(416,180,'D1','ref','end')+tx(416,192,'1N4148','val','end')+tx(482,180,'D2')+tx(482,192,'1N4148','val');
+draw+=tx(566,204,'VR2')+tx(566,216,'VOL A100k','val')+tx(656,174,'J2 OUT','ref','middle');
+draw+=tx(430,296,'R7')+tx(430,308,'10k','val')+tx(430,356,'R8')+tx(430,368,'10k','val')+tx(488,356,'C5')+tx(488,368,'10u','val');
+draw+=tx(566,332,'J3','ref','middle')+tx(566,344,'9V DC','val','middle')+tx(640,262,'D3 1N5817','ref','middle')+tx(710,262,'R9 100R','ref','middle');
+draw+=tx(752,310,'C6','ref','end')+tx(752,322,'100u','val','end')+tx(810,304,'R10')+tx(810,316,'4k7','val')+tx(792,372,'D4','ref','end')+tx(792,384,'LED','val','end');
+
+const BLOCKS=[
+  {id:'in',name:'INPUT + BIAS',x:12,y:104,w:216,h:140,c:'blkA'},
+  {id:'gain',name:'GAIN STAGE',x:230,y:74,w:112,h:350,c:'blkB'},
+  {id:'clip',name:'CLIPPING',x:344,y:106,w:178,h:134,c:'blkA'},
+  {id:'out',name:'VOLUME + OUTPUT',x:524,y:126,w:170,h:114,c:'blkB'},
+  {id:'vref',name:'VREF',x:344,y:242,w:156,h:176,c:'blkB'},
+  {id:'pwr',name:'POWER',x:532,y:242,w:304,h:176,c:'blkA'},
+];
+const BLOCKNAME=Object.fromEntries(BLOCKS.map(b=>[b.id,b.name]));
+const PARTS=[
+  {id:'J1',b:'in',r:[10,124,64,82],n:'Input jack',v:'',d:'Where the guitar cable plugs in. Tip carries the signal; sleeve goes to ground.'},
+  {id:'R1',b:'in',r:[98,140,42,62],n:'Pulldown resistor',v:'1M',d:'Bleeds stray voltage off the input cap so the pedal doesn’t pop when you stomp it on.'},
+  {id:'C1',b:'in',r:[126,114,68,58],n:'Input capacitor',v:'10n',d:'Lets the guitar signal through but blocks DC. A small value like this also trims some low end before the distortion.'},
+  {id:'R2',b:'in',r:[198,140,40,62],n:'Bias resistor',v:'1M',d:'Ties the op amp’s + input to VREF (4.5V) so the signal can swing up and down without hitting 0V.'},
+  {id:'U1',b:'gain',r:[238,98,92,104],n:'Op amp (half of a TL072)',v:'U1A',d:'The amplifier. The − and + inputs are on the left, the output is the point. Pin 8 goes to +9V and pin 4 to ground.'},
+  {id:'R3',b:'gain',r:[252,200,72,30],n:'Feedback resistor',v:'1M',d:'Feeds part of the output back to the − input. Together with R4 and the gain pot it sets how much the op amp amplifies.'},
+  {id:'R4',b:'gain',r:[224,232,48,48],n:'Gain-limit resistor',v:'4k7',d:'Sets the maximum gain. The less resistance from the − input to ground, the more gain.'},
+  {id:'VR1',b:'gain',r:[224,282,72,56],n:'Gain pot',v:'C1M',d:'Wired as a variable resistor: the wiper is tied to one end. Turning it changes the resistance to ground, which changes the gain.'},
+  {id:'C3',b:'gain',r:[224,342,48,56],n:'Gain-leg capacitor',v:'47n',d:'Blocks DC so only the guitar signal gets amplified. Its value also decides how much bass gets boosted.'},
+  {id:'C4',b:'clip',r:[346,120,68,48],n:'Output coupling cap (electrolytic)',v:'1u',d:'Passes the signal and blocks the op amp’s 4.5V DC. The + side faces the op amp because that side sits at the higher voltage.'},
+  {id:'D1',b:'clip',r:[378,160,64,58],n:'Clipping diode',v:'1N4148',d:'Pointing down to ground, it clips the top of the wave. This pair is where the distortion comes from.'},
+  {id:'D2',b:'clip',r:[456,160,64,58],n:'Clipping diode',v:'1N4148',d:'Pointing the opposite way to D1, so it clips the bottom of the wave.'},
+  {id:'VR2',b:'out',r:[520,156,104,66],n:'Volume pot',v:'A100k',d:'Works as a voltage divider: the wiper picks off part of the signal. Audio (A) taper because our ears hear loudness on a log scale.'},
+  {id:'J2',b:'out',r:[626,162,60,62],n:'Output jack',v:'',d:'Goes to your amp or the next pedal. Tip = signal, sleeve = ground.'},
+  {id:'R7',b:'vref',r:[408,272,40,56],n:'VREF divider resistor (top)',v:'10k',d:'With R8, splits 9V in half. Two equal resistors make VREF about 4.5V.'},
+  {id:'R8',b:'vref',r:[408,334,40,54],n:'VREF divider resistor (bottom)',v:'10k',d:'With R7, splits 9V in half to make VREF.'},
+  {id:'C5',b:'vref',r:[458,334,40,54],n:'VREF filter cap',v:'10u',d:'Holds VREF steady and keeps noise out of it. Polarized: + side up toward VREF, − to ground.'},
+  {id:'J3',b:'pwr',r:[544,270,60,82],n:'DC power jack',v:'9V',d:'Center negative, Boss style. The sleeve carries +9V.'},
+  {id:'D3',b:'pwr',r:[606,250,70,40],n:'Polarity protection diode (Schottky)',v:'1N5817',d:'If someone plugs in a center-positive adapter, this diode blocks it so nothing gets damaged.'},
+  {id:'R9',b:'pwr',r:[678,250,64,40],n:'Power filter resistor',v:'100R',d:'Works with C6 to filter noise out of the supply.'},
+  {id:'C6',b:'pwr',r:[728,284,46,56],n:'Power filter cap',v:'100u',d:'The big supply cap. + side to the 9V rail, − side to ground.'},
+  {id:'R10',b:'pwr',r:[788,284,46,54],n:'LED resistor',v:'4k7',d:'Limits the current so the LED doesn’t burn out.'},
+  {id:'D4',b:'pwr',r:[774,342,58,58],n:'Status LED',v:'',d:'Anode (+) toward 9V, cathode (−) to ground. In a real pedal the footswitch turns it on and off.'},
+];
+const HUNT=[
+  ['Tap the input jack',['J1']],['Tap the output jack',['J2']],['Tap the DC power jack',['J3']],['Tap the op amp',['U1']],
+  ['Tap the gain knob',['VR1']],['Tap the volume knob',['VR2']],['Tap a clipping diode',['D1','D2']],
+  ['Tap the pulldown resistor that stops switch pop',['R1']],['Tap the capacitor that blocks DC at the input',['C1']],
+  ['Tap the polarized (electrolytic) cap in the signal path',['C4']],['Tap a resistor that helps make VREF',['R7','R8']],
+  ['Tap the resistor tying the op amp’s + input to VREF',['R2']],['Tap the feedback resistor',['R3']],
+  ['Tap the polarity protection diode',['D3']],['Tap the big power filter cap',['C6']],['Tap the status LED',['D4']],
+  ['Tap the LED’s current-limiting resistor',['R10']],['Tap the cap that steadies VREF',['C5']],
+];
+const blockSVG=BLOCKS.map(b=>R(b.x,b.y,b.w,b.h,'blk '+b.c,10)+`<text x="${b.x+8}" y="${b.y+13}" class="blkname">${b.name}</text>`).join('');
+const hits=PARTS.map(p=>`<rect class="hit" data-part="${p.id}" x="${p.r[0]}" y="${p.r[1]}" width="${p.r[2]}" height="${p.r[3]}" rx="6"><title>${p.id}</title></rect>`).join('');
+$('#schWrap').innerHTML=`<svg viewBox="0 70 840 360" class="sym sch" id="sch" role="img" aria-label="Example overdrive pedal schematic"><g class="blocks">${blockSVG}</g>${draw}<g id="selLayer"></g>${hits}</svg>`;
+
+const fi={mode:'hunt',order:[],cur:null,right:0,tries:0};
+function setSel(id,cls){const p=PARTS.find(x=>x.id===id);$('#selLayer').innerHTML=p?R(p.r[0],p.r[1],p.r[2],p.r[3],'sel '+(cls||''),6):'';}
+function partInfo(p){return `<span class="tag">${BLOCKNAME[p.b]}</span><h3>${p.id}${p.v?' · '+esc(p.v):''}: ${esc(p.n)}</h3><p>${esc(p.d)}</p>`;}
+function nextHunt(){
+  if(!fi.order.length)fi.order=shuffle(HUNT);
+  fi.cur=fi.order.shift();setSel(null);
+  $('#huntPrompt').innerHTML=`<span>${esc(fi.cur[0])}</span><small>${fi.right}/${fi.tries} right</small>`;
+}
+function setMode(m){
+  fi.mode=m;$('#mHunt').setAttribute('aria-pressed',m==='hunt');$('#mExplore').setAttribute('aria-pressed',m==='explore');
+  $('#huntPrompt').style.display=m==='hunt'?'flex':'none';setSel(null);
+  const info=$('#findInfo');info.className='info';
+  if(m==='hunt'){info.innerHTML='<p style="margin:0">Find the part named above, then tap it on the schematic.</p>';nextHunt();}
+  else info.innerHTML='<p style="margin:0">Tap any part to see what it is and what it does here. Turn on <b>Show sections</b> to see the circuit as labeled blocks.</p>';
+}
+$('#mHunt').onclick=()=>setMode('hunt');$('#mExplore').onclick=()=>setMode('explore');
+$('#showBlocks').onchange=e=>$('#sch').classList.toggle('showblocks',e.target.checked);
+$('#sch').addEventListener('click',e=>{
+  const h=e.target.closest('[data-part]');const info=$('#findInfo');
+  if(!h){ if(fi.mode==='hunt'&&fi.cur&&info.dataset.wait==='1'){} return;}
+  const p=PARTS.find(x=>x.id===h.dataset.part);
+  if(fi.mode==='explore'){setSel(p.id);info.className='info';info.innerHTML=partInfo(p);return;}
+  if(info.dataset.wait==='1')return;
+  fi.tries++;const ok=fi.cur[1].includes(p.id);if(ok)fi.right++;
+  setSel(p.id,ok?'good':'bad');info.className='info '+(ok?'good':'bad');
+  info.innerHTML=(ok?'<p style="margin:0 0 6px"><b>Yes.</b></p>':`<p style="margin:0 0 6px"><b>Not that one.</b> You tapped:</p>`)+partInfo(p)+
+    `<div class="row">${ok?'':'<button class="btn ghost" id="hShow">Show me</button>'}<button class="btn primary" id="hNext">Next part</button></div>`;
+  info.dataset.wait='1';
+  $('#huntPrompt').querySelector('small').textContent=`${fi.right}/${fi.tries} right`;
+});
+$('#findInfo').addEventListener('click',e=>{
+  const info=$('#findInfo');
+  if(e.target.id==='hNext'){info.dataset.wait='0';info.className='info';info.innerHTML='<p style="margin:0">Find the part named above, then tap it.</p>';nextHunt();}
+  if(e.target.id==='hShow'){const p=PARTS.find(x=>x.id===fi.cur[1][0]);setSel(p.id,'good');info.className='info good';
+    info.innerHTML=`<p style="margin:0 0 6px"><b>Here it is.</b></p>`+partInfo(p)+'<div class="row"><button class="btn primary" id="hNext">Next part</button></div>';}
+});
+
+/* ---------- which end guide ---------- */
+const fig=(s,cap)=>`<figure>${s}<figcaption>${cap}</figcaption></figure>`;
+$('#v-pins').innerHTML=`
+<div class="gsec"><h2>Plus, minus and ground</h2><p>Most schematics never draw the battery. Instead, labels tell you where power is.</p>
+ <div class="figs">${fig(sym('rail'),'+9V: positive')}${fig(sym('vref'),'VREF: about 4.5V')}${fig(sym('ground'),'Ground: 0V, negative')}${fig(sym('battery',1),'Battery plates')}</div>
+ <ul><li><b>Ground</b> is 0V. Every ground symbol connects to every other one and to the negative side of the supply.</li>
+ <li><b>+9V, VCC, V+</b> all mean the positive supply. Some pedals also have <b>−9V</b> or <b>18V</b> from a charge pump.</li>
+ <li><b>VREF</b> (also VB or 4.5V) sits halfway. Op-amp pedals swing the signal around it.</li>
+ <li>Rule of thumb: on most pedal schematics, positive is drawn near the top and ground near the bottom.</li></ul></div>
+
+<div class="gsec"><h2>Diodes and LEDs</h2><p>Anode is +, cathode is −. Current flows anode to cathode, the way the triangle points.</p>
+ <div class="figs">${fig(sym('diode',1),'Symbol: bar = cathode')}${fig(diodeReal(1),'Real part: band = cathode')}${fig(ledReal(1),'LED: long leg = +')}</div>
+ <ul><li>Memory trick: the bar looks like a minus sign standing up.</li>
+ <li>Clipping diodes often come in pairs pointing opposite ways, so both halves of the wave get clipped.</li>
+ <li>A polarity-protection diode points from the DC jack toward the circuit.</li></ul></div>
+
+<div class="gsec"><h2>Capacitors</h2><p>Only some capacitors care which way round they go.</p>
+ <div class="figs">${fig(sym('ecap',1),'Symbol: curved plate = −')}${fig(ecapReal(1),'Real part: stripe = −')}${fig(sym('cap'),'Flat plates: no polarity')}</div>
+ <ul><li>Electrolytics (usually 1µF and up) are polarized. The + side goes toward the higher voltage.</li>
+ <li>Film and ceramic caps (pF and nF values) can go in either way.</li></ul></div>
+
+<div class="gsec"><h2>Transistor legs</h2><p>The arrow is always on the emitter (BJT) or the gate (JFET). The symbol tells you the leg names; the datasheet tells you which physical leg is which.</p>
+ <div class="figs">${fig(sym('npn',1),'NPN: arrow out')}${fig(sym('pnp',1),'PNP: arrow in')}${fig(sym('njfet',1),'N-JFET: gate arrow in')}${fig(sym('nmos',1),'MOSFET: gate not touching')}</div>
+ <ul><li><b>B</b> base: the flat bar. <b>C</b> collector and <b>E</b> emitter: the angled legs. Memory tricks: NPN = Not Pointing iN; PNP = Pointing iN Proudly.</li>
+ <li>NPN: collector toward +9V, emitter toward ground. PNP: the reverse.</li>
+ <li>JFET: <b>G</b> gate, <b>D</b> drain (toward +9V), <b>S</b> source. MOSFET: same names; the source has the arrow tied to it.</li></ul>
+ <p style="margin:12px 0 4px;color:var(--muted)">On the real part, the leg order changes from one part number to the next, even when the package looks the same.</p>
+ <div class="figs">${fig(to92('PART',['?','?','?']),'Leg order: check the datasheet')}</div>
+ <ul><li>Search "[part number] datasheet" and look for the pinout drawing. Small regulators (78L05, 78L09) vary the same way.</li></ul></div>
+
+<div class="gsec"><h2>Chips (8-pin)</h2><p>Find the notch or dot. That end is the top, and pin 1 is just left of it.</p>
+ <div class="figs">${fig(dip8(1),'Dual op amp pinout (TL072, 4558, 5532)')}</div>
+ <ul><li>Count down the left side 1 to 4, then up the right side 5 to 8.</li>
+ <li>Schematics often draw a dual op amp as two triangles, <b>U1A</b> and <b>U1B</b>, plus a separate box for the power pins 8 and 4.</li></ul></div>
+
+<div class="gsec"><h2>Pots</h2><p>Three lugs. The middle one is the wiper, the arrow in the symbol.</p>
+ <div class="figs">${fig(sym('pot',1),'Symbol: arrow = lug 2')}${fig(potReal(1),'Shaft toward you, lugs down')}</div>
+ <ul><li>Turning clockwise moves the wiper toward lug 3.</li>
+ <li>Volume knob: lug 3 to the signal, lug 2 to the output, lug 1 to ground.</li>
+ <li>Taper letter: <b>A</b> audio (log), <b>B</b> linear, <b>C</b> reverse log.</li></ul></div>
+
+<div class="gsec"><h2>Jacks and power</h2>
+ <div class="figs">${fig(plug,'Guitar plug')}${fig(sym('stereo',1),'Stereo input jack')}${fig(sym('dc',1),'DC jack: center negative')}</div>
+ <ul><li>Tip = signal, sleeve = ground.</li>
+ <li>A stereo input jack uses its ring to connect the battery’s negative to ground only when a cable is plugged in. That’s why you unplug pedals to save the battery.</li>
+ <li>Pedal DC jacks are center negative. A center-positive adapter is what the protection diode guards against.</li></ul></div>`;
+
+/* ---------- tabs ---------- */
+const TABS=['cards','quiz','find','pins'];
+function show(tab){
+  if(!TABS.includes(tab))tab='cards';
+  TABS.forEach(t=>{$('#v-'+t).classList.toggle('on',t===tab);});
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));
+}
+document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>{
+  const t=b.dataset.tab;try{history.replaceState(null,'','#'+t);}catch(e){location.hash=t;}show(t);window.scrollTo({top:0});
+}));
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+
+function start(){
+  startDeck('symbols');startQuiz('symbols');setMode('hunt');show(location.hash.slice(1)||'cards');
+}
+start();
+})();
+/* offline support: save the app on the phone after the first visit */
+if('serviceWorker' in navigator&&location.protocol!=='file:'){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
+</script>
+</body>
+</html>
